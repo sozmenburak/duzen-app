@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { getStore } from '@/store'
+import { getStore, useStore, getWaterIntakeEntriesInRange } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ContributionHeatmap } from '@/components/ContributionHeatmap'
 import {
@@ -9,6 +9,7 @@ import {
   getAutoInterpretation,
   type PeriodStats,
 } from '@/lib/summary'
+import { Droplets, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 type PeriodKey = '1w' | '1m' | '3m' | '6m' | '1y'
 
@@ -46,7 +47,24 @@ function StatCard({
   )
 }
 
+function formatDateShort(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function formatLitres(litres: number): string {
+  return litres % 1 === 0 ? `${litres} L` : `${litres.toFixed(1).replace('.', ',')} L`
+}
+
+type WaterPeriodKey = '1w' | '1m'
+
+const WATER_PERIOD_OPTIONS: { value: WaterPeriodKey; label: string }[] = [
+  { value: '1w', label: 'Son 1 hafta' },
+  { value: '1m', label: 'Son 1 ay' },
+]
+
 export function SummaryTab() {
+  useStore()
   const store = getStore()
   const goals = store.goals
   const [selectedGoalId, setSelectedGoalId] = useState<string>(goals[0]?.id ?? '')
@@ -96,6 +114,43 @@ export function SummaryTab() {
   }, [selectedGoal, periodStats])
 
   const totalLastYear = periodStats?.['1y']?.current.done ?? 0
+
+  const [waterPeriod, setWaterPeriod] = useState<WaterPeriodKey>('1m')
+
+  // Dönem her render'da güncel hesaplansın (bugün dahil); böylece az önce girilen su da görünür
+  const waterRange = getPeriodRange(waterPeriod)
+  const waterPrevRange = getPreviousPeriodRange(waterPeriod)
+
+  const waterEntries = useMemo(
+    () => getWaterIntakeEntriesInRange(waterRange.start, waterRange.end),
+    [waterRange.start, waterRange.end, store]
+  )
+  const waterPrevEntries = useMemo(
+    () => getWaterIntakeEntriesInRange(waterPrevRange.start, waterPrevRange.end),
+    [waterPrevRange.start, waterPrevRange.end, store]
+  )
+
+  const waterTotalLitres = useMemo(() => waterEntries.reduce((s, e) => s + e.litres, 0), [waterEntries])
+  const waterPrevTotalLitres = useMemo(() => waterPrevEntries.reduce((s, e) => s + e.litres, 0), [waterPrevEntries])
+
+  const daysWithWaterCount = waterEntries.length
+  const avgLitresPerDay =
+    daysWithWaterCount > 0 ? waterTotalLitres / daysWithWaterCount : 0
+  const periodLabel = waterPeriod === '1w' ? 'hafta' : 'ay'
+  const waterComparisonText =
+    waterPrevEntries.length === 0 && waterEntries.length === 0
+      ? 'Henüz su kaydı yok.'
+      : waterPrevEntries.length === 0
+        ? `Bu ${periodLabel} toplam ${formatLitres(waterTotalLitres)} (${daysWithWaterCount} gün).`
+        : (() => {
+            const diff = waterTotalLitres - waterPrevTotalLitres
+            const prevLabel = waterPeriod === '1w' ? 'Önceki hafta' : 'Önceki ay'
+            if (diff > 0)
+              return `Bu ${periodLabel} ${formatLitres(waterTotalLitres)} — ${prevLabel} ${formatLitres(waterPrevTotalLitres)}. Artış var, güzel!`
+            if (diff < 0)
+              return `Bu ${periodLabel} ${formatLitres(waterTotalLitres)} — ${prevLabel} ${formatLitres(waterPrevTotalLitres)}. Biraz daha su içmeyi hedefle.`
+            return `Bu ${periodLabel} ${formatLitres(waterTotalLitres)} — ${prevLabel} ile aynı.`
+          })()
 
   if (goals.length === 0) {
     return (
@@ -156,6 +211,66 @@ export function SummaryTab() {
               ))}
             </div>
           </div>
+
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Droplets className="h-4 w-4" />
+                  Su tüketimi
+                </CardTitle>
+                <select
+                  value={waterPeriod}
+                  onChange={(e) => setWaterPeriod(e.target.value as WaterPeriodKey)}
+                  className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {WATER_PERIOD_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              <div className="flex flex-wrap gap-4 text-sm">
+                <p className="text-muted-foreground">
+                  Toplam <strong className="text-foreground">{formatLitres(waterTotalLitres)}</strong>
+                  {daysWithWaterCount > 0 && (
+                    <> — <strong className="text-foreground">{daysWithWaterCount}</strong> gün su içildi</>
+                  )}
+                </p>
+                {daysWithWaterCount > 0 && (
+                  <p className="text-muted-foreground">
+                    Günlük ortalama <strong className="text-foreground">{formatLitres(avgLitresPerDay)}</strong>
+                  </p>
+                )}
+              </div>
+
+              <p className="text-sm text-foreground/90 flex items-center gap-2">
+                {waterComparisonText.includes('Artış') && <TrendingUp className="h-4 w-4 text-green-500 shrink-0" />}
+                {waterComparisonText.includes('Biraz daha') && <TrendingDown className="h-4 w-4 text-amber-500 shrink-0" />}
+                {waterComparisonText.includes('aynı') && <Minus className="h-4 w-4 text-muted-foreground shrink-0" />}
+                {waterComparisonText}
+              </p>
+
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">Su içilen günler (sadece girilen veriler)</h4>
+                {waterEntries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Bu dönemde henüz su kaydı yok. Takvimden sadece bugün için su girişi yapabilirsin.</p>
+                ) : (
+                  <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {waterEntries.map(({ dateKey, litres }) => (
+                      <li key={dateKey} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">{formatDateShort(dateKey)}</span>
+                        <span className="font-medium tabular-nums text-primary">{formatLitres(litres)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

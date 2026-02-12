@@ -4,7 +4,8 @@ import { getDaysInMonth, dateToKey } from '@/types'
 import { Button } from '@/components/ui/button'
 import { CommentButton } from '@/components/CommentButton'
 import { EarningsButton } from '@/components/EarningsButton'
-import { Check, X, Trash2, GripVertical, MessageSquare } from 'lucide-react'
+import { WaterBottlesButton } from '@/components/WaterBottlesButton'
+import { Check, X, Trash2, GripVertical, MessageSquare, Droplets } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,8 +153,11 @@ export function CalendarGrid({
           <div className="w-14 shrink-0 flex items-center justify-center py-1 border-r border-border text-muted-foreground" title="Günlük yorum">
             <MessageSquare className="h-4 w-4" />
           </div>
-          <div className="w-20 shrink-0 flex items-center justify-center py-1 border-border text-muted-foreground text-lg font-semibold" title="Para kazanma">
+          <div className="w-20 shrink-0 flex items-center justify-center py-1 border-r border-border text-muted-foreground text-lg font-semibold" title="Para kazanma">
             ₺
+          </div>
+          <div className="w-28 shrink-0 flex items-center justify-center py-1 border-border text-muted-foreground" title="Su tüketimi (her şişe 1 L)">
+            <Droplets className="h-4 w-4" />
           </div>
         </div>
         {/* Her gün bir satır */}
@@ -184,8 +188,11 @@ export function CalendarGrid({
               <div className="w-14 shrink-0 flex justify-center items-center py-1 border-r border-border">
                 <CommentButton dateKey={dateKey} />
               </div>
-              <div className="w-20 shrink-0 flex justify-center items-center py-1 border-border">
+              <div className="w-20 shrink-0 flex justify-center items-center py-1 border-r border-border">
                 <EarningsButton dateKey={dateKey} />
+              </div>
+              <div className="w-28 shrink-0 flex justify-center items-center py-1 border-border">
+                <WaterBottlesButton dateKey={dateKey} />
               </div>
             </div>
           )

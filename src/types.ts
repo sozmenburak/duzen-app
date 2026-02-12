@@ -12,12 +12,24 @@ export interface Completions {
   }
 }
 
+/** Günlük görev: sadece o güne ait, yapıldı/yapılmadı/yarına ertele seçenekleri. */
+export type DailyTaskStatus = 'done' | 'skip' | null // null = henüz işaretlenmedi
+
+export interface DailyTask {
+  id: string
+  title: string
+  dateKey: string // YYYY-MM-DD — hangi güne ait
+  status: DailyTaskStatus
+}
+
 export interface Store {
   goals: Goal[]
   completions: Completions
   columnWidths?: Record<string, number> // goalId -> width (px)
   comments?: Record<string, string> // dateKey -> günlük yorum
   earnings?: Record<string, { amount: number; note: string }> // dateKey -> kazanç + nereden
+  waterIntake?: Record<string, number> // dateKey -> litre (0, 0.5, 1, ... 4; her şişe 1L)
+  dailyTasks?: DailyTask[] // günlük görevler (sadece o gün geçerli)
 }
 
 export interface EarningsEntry {
@@ -27,8 +39,12 @@ export interface EarningsEntry {
 
 export const STORAGE_KEY = 'duzen-app-data'
 
+/** Tarihi YYYY-MM-DD anahtarına çevirir. Yerel tarih kullanılır (saat dilimi kayması olmaz). */
 export function dateToKey(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function getDaysInMonth(year: number, month: number): Date[] {

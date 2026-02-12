@@ -8,6 +8,7 @@ import { ResetDangerModal } from '@/components/ResetDangerModal'
 import { CalendarGrid, MonthNav } from '@/components/CalendarGrid'
 import { SummaryTab } from '@/components/SummaryTab'
 import { EarningsTab } from '@/components/EarningsTab'
+import { DailyTab } from '@/components/DailyTab'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -74,6 +75,7 @@ function App() {
             <TabsTrigger value="calendar">Takvim</TabsTrigger>
             <TabsTrigger value="summary">Özet</TabsTrigger>
             <TabsTrigger value="earnings">Para</TabsTrigger>
+            <TabsTrigger value="daily">Günlük</TabsTrigger>
           </TabsList>
           <TabsContent value="calendar">
             <Card>
@@ -96,11 +98,12 @@ function App() {
           <TabsContent value="earnings">
             <EarningsTab />
           </TabsContent>
+          <TabsContent value="daily">
+            <DailyTab />
+          </TabsContent>
         </Tabs>
 
-        <p className="mt-4 text-xs text-muted-foreground">
-          Veriler sadece bu cihazda (localStorage) saklanır. Hedef başlığına tıklayıp &quot;Hedefi sil&quot; ile silebilirsin.
-        </p>
+        
       </main>
 
       <ResetDangerModal open={resetModalOpen} onOpenChange={setResetModalOpen} />

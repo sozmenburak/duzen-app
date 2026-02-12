@@ -141,3 +141,14 @@ export function getTotalEarnings(startDateKey: string, endDateKey: string): numb
   }
   return total
 }
+
+/** Tarih aralığındaki tüm günlerin dateKey listesi (start..end dahil) */
+export function getDateKeysInRange(startDateKey: string, endDateKey: string): string[] {
+  const keys: string[] = []
+  const start = new Date(startDateKey)
+  const end = new Date(endDateKey)
+  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    keys.push(dateToKey(d))
+  }
+  return keys
+}

@@ -1,6 +1,6 @@
 import * as React from 'react'
-import type { Store, Goal, CellStatus, EarningsEntry } from './types'
-import { STORAGE_KEY } from './types'
+import type { Store, Goal, CellStatus, EarningsEntry, DailyTask, DailyTaskStatus } from './types'
+import { STORAGE_KEY, dateToKey } from './types'
 
 function migrateEarnings(raw: unknown): Record<string, { amount: number; note: string }> {
   if (!raw || typeof raw !== 'object') return {}
@@ -16,6 +16,25 @@ function migrateEarnings(raw: unknown): Record<string, { amount: number; note: s
   return out
 }
 
+const MAX_WATER_LITRES = 4
+const WATER_STEP = 0.5
+
+function normalizeWaterLitres(value: number): number {
+  if (!Number.isFinite(value) || value < 0) return 0
+  const steps = Math.round(value / WATER_STEP) * WATER_STEP
+  return Math.min(MAX_WATER_LITRES, Math.max(0, steps))
+}
+
+function migrateWaterIntake(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, number> = {}
+  for (const [k, v] of Object.entries(raw)) {
+    const num = typeof v === 'number' ? v : Number(v)
+    if (Number.isFinite(num) && num > 0) out[k] = normalizeWaterLitres(num)
+  }
+  return out
+}
+
 const DEFAULT_COLUMN_WIDTH = 140
 
 const defaultStore: Store = {
@@ -24,6 +43,8 @@ const defaultStore: Store = {
   columnWidths: {},
   comments: {},
   earnings: {},
+  waterIntake: {},
+  dailyTasks: [],
 }
 
 function normalizeStore(parsed: unknown): Store {
@@ -35,6 +56,8 @@ function normalizeStore(parsed: unknown): Store {
     columnWidths: p.columnWidths && typeof p.columnWidths === 'object' ? (p.columnWidths as Store['columnWidths']) : {},
     comments: p.comments && typeof p.comments === 'object' ? (p.comments as Store['comments']) : {},
     earnings: migrateEarnings(p.earnings),
+    waterIntake: p.waterIntake && typeof p.waterIntake === 'object' ? migrateWaterIntake(p.waterIntake) : {},
+    dailyTasks: Array.isArray(p.dailyTasks) ? (p.dailyTasks as DailyTask[]) : [],
   }
 }
 
@@ -207,6 +230,121 @@ export function getEarningsEntriesInRange(startDateKey?: string, endDateKey?: st
   return list
 }
 
+export function getWaterIntake(dateKey: string): number {
+  return state.waterIntake?.[dateKey] ?? 0
+}
+
+export function setWaterIntake(dateKey: string, litres: number) {
+  const value = normalizeWaterLitres(litres)
+  if (value === 0) {
+    const { [dateKey]: _, ...rest } = state.waterIntake ?? {}
+    state = { ...state, waterIntake: rest }
+  } else {
+    state = {
+      ...state,
+      waterIntake: { ...state.waterIntake, [dateKey]: value },
+    }
+  }
+  save(state)
+  emit()
+}
+
+/** Belirli bir günde şişe indeksine göre mevcut durum: 0 = boş, 0.5 = yarım, 1 = dolu */
+export function getBottleState(totalLitres: number, bottleIndex: number): 0 | 0.5 | 1 {
+  if (totalLitres <= bottleIndex) return 0
+  if (totalLitres < bottleIndex + 1) return 0.5
+  return 1
+}
+
+/** Şişe tıklanınca döngü: boş -> yarım -> dolu -> boş. Yeni toplam litre döner. */
+export function cycleBottle(totalLitres: number, bottleIndex: number): number {
+  const state = getBottleState(totalLitres, bottleIndex)
+  if (state === 0) return bottleIndex + 0.5
+  if (state === 0.5) return bottleIndex + 1
+  return bottleIndex
+}
+
+/** Tarih aralığında su tüketimi kayıtları (tarih sıralı, en yeni önce). */
+export function getWaterIntakeEntriesInRange(startDateKey?: string, endDateKey?: string): { dateKey: string; litres: number }[] {
+  const entries = state.waterIntake ?? {}
+  let list = Object.entries(entries)
+    .filter(([, litres]) => litres > 0)
+    .map(([dateKey, litres]) => ({ dateKey, litres }))
+  if (startDateKey) list = list.filter(({ dateKey }) => dateKey >= startDateKey)
+  if (endDateKey) list = list.filter(({ dateKey }) => dateKey <= endDateKey)
+  list.sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+  return list
+}
+
+/** Belirli bir güne ait günlük görevleri döndürür (başlık sıralı). */
+export function getDailyTasksForDate(dateKey: string): DailyTask[] {
+  const list = (state.dailyTasks ?? []).filter((t) => t.dateKey === dateKey)
+  list.sort((a, b) => a.title.localeCompare(b.title))
+  return list
+}
+
+/** Tarih aralığındaki tüm günlük görevleri döndürür (dateKey, sonra title sıralı). */
+export function getDailyTasksInRange(startDateKey: string, endDateKey: string): DailyTask[] {
+  const list = (state.dailyTasks ?? []).filter(
+    (t) => t.dateKey >= startDateKey && t.dateKey <= endDateKey
+  )
+  list.sort((a, b) => a.dateKey.localeCompare(b.dateKey) || a.title.localeCompare(b.title))
+  return list
+}
+
+export function addDailyTask(dateKey: string, title: string): void {
+  const trimmed = title.trim()
+  if (!trimmed) return
+  const task: DailyTask = {
+    id: crypto.randomUUID(),
+    title: trimmed,
+    dateKey,
+    status: null,
+  }
+  state = {
+    ...state,
+    dailyTasks: [...(state.dailyTasks ?? []), task],
+  }
+  save(state)
+  emit()
+}
+
+export function removeDailyTask(id: string): void {
+  state = {
+    ...state,
+    dailyTasks: (state.dailyTasks ?? []).filter((t) => t.id !== id),
+  }
+  save(state)
+  emit()
+}
+
+export function setDailyTaskStatus(id: string, status: DailyTaskStatus): void {
+  const tasks = state.dailyTasks ?? []
+  const idx = tasks.findIndex((t) => t.id === id)
+  if (idx < 0) return
+  const next = [...tasks]
+  next[idx] = { ...next[idx], status }
+  state = { ...state, dailyTasks: next }
+  save(state)
+  emit()
+}
+
+/** Görevi yarına taşır (dateKey +1 gün). */
+export function postponeDailyTaskToTomorrow(id: string): void {
+  const tasks = state.dailyTasks ?? []
+  const idx = tasks.findIndex((t) => t.id === id)
+  if (idx < 0) return
+  const task = tasks[idx]
+  const d = new Date(task.dateKey + 'T12:00:00')
+  d.setDate(d.getDate() + 1)
+  const nextKey = dateToKey(d)
+  const next = [...tasks]
+  next[idx] = { ...next[idx], dateKey: nextKey, status: null }
+  state = { ...state, dailyTasks: next }
+  save(state)
+  emit()
+}
+
 /** Tüm veriyi JSON string olarak döndürür (yedek/export). */
 export function exportData(): string {
   return JSON.stringify(state, null, 2)
@@ -229,6 +367,8 @@ export type ResetDataOptions = {
   ticks?: boolean   // completions (yapıldı/yapılmadı)
   comments?: boolean
   earnings?: boolean
+  waterIntake?: boolean
+  dailyTasks?: boolean
 }
 
 /** Tüm veriyi siler (hedefler dahil). */
@@ -238,14 +378,16 @@ export function resetAllData() {
   emit()
 }
 
-/** Sadece veriyi siler; hedefler ve sütun genişlikleri kalır. Seçeneklere göre tikler, yorumlar, para silinir. */
+/** Sadece veriyi siler; hedefler ve sütun genişlikleri kalır. Seçeneklere göre tikler, yorumlar, para, su, günlük görevler silinir. */
 export function resetDataOnly(options: ResetDataOptions) {
-  const { ticks = true, comments = true, earnings = true } = options
+  const { ticks = true, comments = true, earnings = true, waterIntake: wipeWater = true, dailyTasks: resetDaily = true } = options
   state = {
     ...state,
     completions: ticks ? {} : state.completions,
     comments: comments ? {} : state.comments,
     earnings: earnings ? {} : state.earnings,
+    waterIntake: wipeWater ? {} : state.waterIntake,
+    dailyTasks: resetDaily ? [] : state.dailyTasks,
   }
   save(state)
   emit()
