@@ -1,7 +1,6 @@
 import * as React from 'react'
 import type { Store, Goal, CellStatus, EarningsEntry } from './types'
 import { STORAGE_KEY } from './types'
-import { getAuth, apiUpdateData } from './lib/auth'
 
 function migrateEarnings(raw: unknown): Record<string, { amount: number; note: string }> {
   if (!raw || typeof raw !== 'object') return {}
@@ -51,10 +50,6 @@ function load(): Store {
 
 function save(store: Store) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
-  const auth = getAuth()
-  if (auth) {
-    apiUpdateData(auth.username, auth.password, store).catch(() => {})
-  }
 }
 
 let state: Store = load()

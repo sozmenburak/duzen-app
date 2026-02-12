@@ -1,7 +1,0 @@
-name = "duzen-auth"
-main = "src/index.ts"
-compatibility_date = "2024-01-01"
-
-[[kv_namespaces]]
-binding = "DUZEN_KV"
-id = "c4cfc4491841488aa4c8c5c104a8aea9"

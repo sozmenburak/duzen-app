@@ -39,27 +39,9 @@
 
 ---
 
-## Kullanıcı Sistemi (Login / Register)
-
-Uygulama isteğe bağlı olarak **Cloudflare Workers KV** ile basit bir kullanıcı sistemi kullanır:
-
-- **Kayıt ol**: Kullanıcı adı ve şifre ile KV'de hesap oluşturulur; bilgiler ayrıca tarayıcıda (localStorage) tutulur.
-- **Giriş yap**: Kullanıcı adı ve şifre KV'de eşleşirse, KV'deki uygulama verisi localStorage'a yüklenir.
-- Veri her değiştiğinde (hedef, tik, yorum, kazanç vb.) otomatik olarak KV'ye senkronize edilir.
-
-Kurulum için:
-
-1. `worker` klasöründe `npm install` çalıştırıp Worker'ı deploy edin: `npm run deploy`.
-2. Proje kökünde `.env` oluşturup `VITE_AUTH_API_URL=https://duzen-auth.<hesabınız>.workers.dev` ekleyin.
-3. Frontend'i build edip yayınlayın.
-
-KV namespace ID'si `wrangler.toml` içinde tanımlıdır (`c4cfc4491841488aa4c8c5c104a8aea9` — duzen-app).
-
----
-
 ## Veriler Nerede Saklanır?
 
-Giriş yapmadan kullanırsanız tüm veriler **yalnızca tarayıcıda** (localStorage) tutulur. Giriş yaptıysanız veriler hem localStorage'da hem de Cloudflare KV'de (kullanıcı bazlı) saklanır; böylece farklı cihazlardan aynı hesapla giriş yapıp verinize erişebilirsiniz. Veriyi yedeklemek için uygulama içindeki dışa aktarma özelliğini de kullanabilirsiniz.
+Tüm veriler **yalnızca kullandığınız cihazın tarayıcısında** (localStorage) tutulur. Sunucuya gönderilmez; hesap açmanız gerekmez. Veriyi yedeklemek için uygulama içindeki dışa aktarma özelliğini kullanabilir, yedek dosyayı başka cihaza aktararak içe aktarabilirsiniz.
 
 ---
 

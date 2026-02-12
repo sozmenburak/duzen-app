@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '@/store'
 import { FirstSetupScreen } from '@/components/FirstSetupScreen'
-import { LoginRegisterScreen, isLoggedIn } from '@/components/LoginRegisterScreen'
 import { AddGoalDialog } from '@/components/AddGoalDialog'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { DataExportImport } from '@/components/DataExportImport'
@@ -12,8 +11,7 @@ import { EarningsTab } from '@/components/EarningsTab'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { RotateCcw, LogOut } from 'lucide-react'
-import { clearAuth } from '@/lib/auth'
+import { RotateCcw } from 'lucide-react'
 
 function App() {
   const store = useStore()
@@ -21,17 +19,8 @@ function App() {
   const [month, setMonth] = useState(() => new Date().getMonth())
   const [resetModalOpen, setResetModalOpen] = useState(false)
 
-  if (!isLoggedIn()) {
-    return <LoginRegisterScreen />
-  }
-
   if (store.goals.length === 0) {
     return <FirstSetupScreen />
-  }
-
-  const handleLogout = () => {
-    clearAuth()
-    window.location.reload()
   }
 
   const prevMonth = () => {
@@ -72,9 +61,6 @@ function App() {
           >
             <RotateCcw className="h-[1.2rem] w-[1.2rem]" />
             Sıfırla
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleLogout} title="Çıkış yap" aria-label="Çıkış yap">
-            <LogOut className="h-[1.2rem] w-[1.2rem]" />
           </Button>
           <ThemeToggle />
           <DataExportImport />
