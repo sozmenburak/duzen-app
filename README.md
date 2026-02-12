@@ -55,4 +55,4 @@ Tüm veriler **yalnızca kullandığınız cihazın tarayıcısında** (localSto
 
 ---
 
-*Düzen — Günlük hedeflerini takip et. Su, egzersiz, alışkanlıklar.*
+*Düzen — Günlük hedeflerini takip et. Su, egzersiz, alışkanlıklar.* 
