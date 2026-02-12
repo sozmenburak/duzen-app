@@ -1,18 +1,27 @@
 import { useState } from 'react'
 import { useStore } from '@/store'
+import { FirstSetupScreen } from '@/components/FirstSetupScreen'
 import { AddGoalDialog } from '@/components/AddGoalDialog'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { DataExportImport } from '@/components/DataExportImport'
+import { ResetDangerModal } from '@/components/ResetDangerModal'
 import { CalendarGrid, MonthNav } from '@/components/CalendarGrid'
 import { SummaryTab } from '@/components/SummaryTab'
 import { EarningsTab } from '@/components/EarningsTab'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { RotateCcw } from 'lucide-react'
 
 function App() {
-  useStore()
+  const store = useStore()
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => new Date().getMonth())
+  const [resetModalOpen, setResetModalOpen] = useState(false)
+
+  if (store.goals.length === 0) {
+    return <FirstSetupScreen />
+  }
 
   const prevMonth = () => {
     if (month === 0) {
@@ -41,7 +50,18 @@ function App() {
             Günlük hedeflerini takip et. Hücreye tıkla: ✓ yapıldı → ✗ yapılmadı → boş
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 border-border"
+            title="Veriyi sıfırla"
+            aria-label="Veriyi sıfırla"
+            onClick={() => setResetModalOpen(true)}
+          >
+            <RotateCcw className="h-[1.2rem] w-[1.2rem]" />
+            Sıfırla
+          </Button>
           <ThemeToggle />
           <DataExportImport />
           <AddGoalDialog />
@@ -82,6 +102,8 @@ function App() {
           Veriler sadece bu cihazda (localStorage) saklanır. Hedef başlığına tıklayıp &quot;Hedefi sil&quot; ile silebilirsin.
         </p>
       </main>
+
+      <ResetDangerModal open={resetModalOpen} onOpenChange={setResetModalOpen} />
     </div>
   )
 }

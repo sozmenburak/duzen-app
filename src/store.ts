@@ -65,7 +65,7 @@ export function subscribe(listener: Listener) {
   }
 }
 
-function emit() {
+export function emit() {
   listeners.forEach((l) => l())
 }
 
@@ -223,4 +223,30 @@ export function importData(json: string): boolean {
   } catch {
     return false
   }
+}
+
+export type ResetDataOptions = {
+  ticks?: boolean   // completions (yapıldı/yapılmadı)
+  comments?: boolean
+  earnings?: boolean
+}
+
+/** Tüm veriyi siler (hedefler dahil). */
+export function resetAllData() {
+  state = { ...defaultStore }
+  save(state)
+  emit()
+}
+
+/** Sadece veriyi siler; hedefler ve sütun genişlikleri kalır. Seçeneklere göre tikler, yorumlar, para silinir. */
+export function resetDataOnly(options: ResetDataOptions) {
+  const { ticks = true, comments = true, earnings = true } = options
+  state = {
+    ...state,
+    completions: ticks ? {} : state.completions,
+    comments: comments ? {} : state.comments,
+    earnings: earnings ? {} : state.earnings,
+  }
+  save(state)
+  emit()
 }
