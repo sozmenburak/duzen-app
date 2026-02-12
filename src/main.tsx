@@ -3,13 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-// PWA: Geliştirme modunda service worker kaydı (build'de plugin enjekte ediyor)
-if ('serviceWorker' in navigator) {
-  const isDev = import.meta.env.DEV
-  navigator.serviceWorker.register(
-    isDev ? '/dev-sw.js?dev-sw' : '/sw.js',
-    { type: isDev ? 'module' : 'classic' }
-  ).catch(() => {})
+// PWA: Sadece geliştirme modunda SW kaydı (production'da plugin registerSW.js enjekte ediyor)
+if ('serviceWorker' in navigator && import.meta.env.DEV) {
+  navigator.serviceWorker.register('/dev-sw.js?dev-sw', { type: 'module' }).catch(() => {})
 }
 
 createRoot(document.getElementById('root')!).render(
