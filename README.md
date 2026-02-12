@@ -24,7 +24,7 @@
 | Günlük kazançları not etmek istiyorum | “Para” sekmesi ile günlük kazanç ve not girişi yapıp listeleyebilirsiniz. |
 | Verilerimin güvende olmasını istiyorum | Veri sunucuya gönderilmez; sadece cihazınızda saklanır. Yedekleme ve geri yükleme ile taşıyabilirsiniz. |
 
----
+--- 
 
 ## Özellikler
 
