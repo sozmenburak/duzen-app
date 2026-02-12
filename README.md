@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Düzen — Günlük Hedef Takibi
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Düzen**, günlük hedeflerinizi ve alışkanlıklarınızı tek bir yerde takip etmenizi sağlayan, basit ve gizlilik odaklı bir uygulamadır. Su içmek, egzersiz yapmak, kitap okumak gibi alışkanlıklarınızı takvim üzerinde işaretleyerek tutarlılığınızı görselleştirir.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Ne Sağlar?
 
-## React Compiler
+- **Günlük hedefleri tek ekranda takip** — Birden fazla hedefi (ör. “3 litre su iç”, “20 şınav”, “30 sayfa kitap oku”) aynı takvimde görebilir, her gün için yapıldı / yapılmadı / boş olarak işaretleyebilirsiniz.
+- **Özet ve istatistikler** — Seçtiğiniz hedef için son 1 hafta, 1 ay, 3 ay, 6 ay veya 1 yıllık “sadakat” oranını ve önceki dönemle karşılaştırmayı görürsünüz; katkı ısı haritası ile ilerlemenizi bir bakışta takip edebilirsiniz.
+- **Günlük kazanç takibi** — İsterseniz günlük kazancınızı (tutar + not) kaydedebilir, “Para” sekmesinden geçmişe dönük listeleyebilirsiniz.
+- **Günlük yorumlar** — Belirli bir güne not veya yorum ekleyebilirsiniz; veriler yalnızca cihazınızda saklanır.
+- **Veri sizin cihazınızda** — Hesap, giriş veya sunucu yok; tüm veriler tarayıcıda (localStorage) tutulur. İstediğiniz zaman yedek alıp başka cihaza aktarabilirsiniz.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Hangi Sorunlara Çözüm Getirir?
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Sorun | Düzen ile çözüm |
+|-------|------------------|
+| Alışkanlıklarımı unutuyorum | Takvimde her günü işaretleyerek ne yaptığınızı net görürsünüz. |
+| Birden fazla hedefi ayrı ayrı takip etmek zor | Tüm hedefler tek takvimde; tek tıkla ✓ / ✗ işaretleyebilirsiniz. |
+| İlerleme hissetmek istiyorum | Özet sekmesinde dönemsel istatistikler ve ısı haritası ile ilerlemenizi görürsünüz. |
+| Günlük kazançları not etmek istiyorum | “Para” sekmesi ile günlük kazanç ve not girişi yapıp listeleyebilirsiniz. |
+| Verilerimin güvende olmasını istiyorum | Veri sunucuya gönderilmez; sadece cihazınızda saklanır. Yedekleme ve geri yükleme ile taşıyabilirsiniz. |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Özellikler
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Takvim görünümü** — Aylık takvimde her hedef için hücreye tıklayarak: ✓ (yapıldı) → ✗ (yapılmadı) → boş döngüsü.
+- **Hedef yönetimi** — Hedef ekleme, silme; hedeflere başlangıç tarihi verebilme; hazır öneri hedeflerden seçebilme.
+- **Özet sekmesi** — Hedef bazlı dönem istatistikleri (1 hafta / 1 ay / 3 ay / 6 ay / 1 yıl), sadakat yüzdesi ve önceki dönemle karşılaştırma; katkı ısı haritası.
+- **Para sekmesi** — Günlük kazanç ve not girişi, geçmiş kayıtların listelenmesi.
+- **Günlük yorumlar** — İstediğiniz güne kısa not ekleme.
+- **Yedekleme ve geri yükleme** — Veriyi JSON olarak dışa aktarma ve içe aktarma; veriyi sıfırlama seçenekleri.
+- **Açık / koyu tema** — Arayüzde tema değiştirme.
+- **PWA desteği** — Uyumlu tarayıcılarda “Ana ekrana ekle” ile uygulama gibi kullanılabilir.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Veriler Nerede Saklanır?
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Tüm veriler **yalnızca kullandığınız cihazın tarayıcısında** (localStorage) tutulur. Sunucuya gönderilmez; hesap açmanız gerekmez. Veriyi yedeklemek için uygulama içindeki dışa aktarma özelliğini kullanabilir, yedek dosyayı başka cihaza aktararak içe aktarabilirsiniz.
+
+---
+
+## Kullanım
+
+1. Uygulamayı açın; ilk açılışta hedef seçme veya kendi hedeflerinizi ekleme adımlarını tamamlayın.
+2. **Takvim** sekmesinde ilgili güne tıklayarak hedefi yapıldı / yapılmadı / boş olarak işaretleyin.
+3. **Özet** sekmesinden hedef seçip dönem istatistiklerini ve ısı haritasını inceleyin.
+4. **Para** sekmesinden günlük kazanç ve not girebilirsiniz.
+5. Hedef başlığına tıklayıp “Hedefi sil” ile hedefi kaldırabilirsiniz; veriyi tamamen sıfırlamak için üstteki “Sıfırla” butonunu kullanabilirsiniz.
+
+---
+
+*Düzen — Günlük hedeflerini takip et. Su, egzersiz, alışkanlıklar.*
