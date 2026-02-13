@@ -7,9 +7,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Download, Upload, Database } from 'lucide-react'
+import { pushStoreToSupabase } from '@/lib/supabaseSync'
+import { useAuth } from '@/contexts/AuthContext'
 import { exportData, importData } from '@/store'
 
 export function DataExportImport() {
+  const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleExport = () => {
@@ -31,10 +34,13 @@ export function DataExportImport() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       const text = reader.result as string
       if (importData(text)) {
-        // Veri güncellendi, sayfa state'i emit ile zaten güncellenecek
+        if (user?.id) {
+          const { error } = await pushStoreToSupabase(user.id)
+          if (error) console.error('[DataExportImport] Import sonrası Supabase push hatası:', error)
+        }
         window.location.reload()
       } else {
         alert('Geçersiz yedek dosyası. Lütfen daha önce Export ile aldığınız JSON dosyasını seçin.')

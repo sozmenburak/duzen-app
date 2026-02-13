@@ -37,9 +37,9 @@ export function AddGoalDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Yeni hedef
+        <Button size="sm" className="gap-2 shrink-0 h-9 px-3">
+          <Plus className="h-4 w-4 shrink-0" />
+          <span>Yeni hedef</span>
         </Button>
       </DialogTrigger>
       <DialogContent>

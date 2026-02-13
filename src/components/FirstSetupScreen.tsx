@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/contexts/AuthContext'
+import { pushStoreToSupabase } from '@/lib/supabaseSync'
 import { addGoal, emit, importData, useStore } from '@/store'
 import { dateToKey } from '@/types'
-import { ArrowRight, FileUp, Plus, Target, Check } from 'lucide-react'
+import { ArrowRight, FileUp, Plus, Target, Check, LogOut, LogIn } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /** Taslak / öneri hedefler — kullanıcı bunları seçip toplu ekleyebilir */
@@ -26,7 +28,7 @@ const DRAFT_GOALS = [
 
 type Step = 'choice' | 'add-goal'
 
-export function FirstSetupScreen() {
+export function FirstSetupScreen({ onOpenAuthDialog }: { onOpenAuthDialog?: () => void }) {
   useStore()
   const [step, setStep] = useState<Step>('choice')
   const [customTitle, setCustomTitle] = useState('')
@@ -84,13 +86,19 @@ export function FirstSetupScreen() {
     fileInputRef.current?.click()
   }
 
+  const { user, signOut } = useAuth()
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       const text = reader.result as string
       if (importData(text)) {
+        if (user?.id) {
+          const { error } = await pushStoreToSupabase(user.id)
+          if (error) console.error('[FirstSetupScreen] Import sonrası Supabase push hatası:', error)
+        }
         window.location.reload()
       } else {
         alert('Geçersiz yedek dosyası. Lütfen daha önce Export ile aldığınız JSON dosyasını seçin.')
@@ -102,6 +110,29 @@ export function FirstSetupScreen() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-4 md:p-8 overflow-auto">
+      {user ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 text-muted-foreground"
+          onClick={() => signOut()}
+          title="Çıkış yap"
+        >
+          <LogOut className="h-4 w-4" />
+          Çıkış
+        </Button>
+      ) : onOpenAuthDialog ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 text-muted-foreground"
+          onClick={onOpenAuthDialog}
+          title="Giriş yap — verilerini senkronize et"
+        >
+          <LogIn className="h-4 w-4" />
+          Giriş yap
+        </Button>
+      ) : null}
       <input
         ref={fileInputRef}
         type="file"

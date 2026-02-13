@@ -7,6 +7,12 @@ function isToday(dateKey: string): boolean {
   return dateKey === dateToKey(new Date())
 }
 
+function isYesterday(dateKey: string): boolean {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return dateKey === dateToKey(d)
+}
+
 function BottleIcon({ state, title }: { state: 0 | 0.5 | 1; title: string }) {
   const half = state === 0.5
   const full = state === 1
@@ -54,7 +60,7 @@ export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
   useStore()
   const total = getWaterIntake(dateKey)
   const hasWater = total > 0
-  const canEdit = isToday(dateKey)
+  const canEdit = isToday(dateKey) || isYesterday(dateKey)
 
   const handleBottleClick = (index: number) => {
     if (!canEdit) return
@@ -76,7 +82,7 @@ export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
         canEdit
           ? hasWater
             ? `Su: ${total} L — Şişelere tıklayarak düzenle`
-            : 'Su tüketimi (her şişe 1 L) — sadece bugün giriş yapılabilir'
+            : 'Su tüketimi (her şişe 1 L) — bugün ve dün giriş yapılabilir'
           : hasWater
             ? `Su: ${total} L (geçmiş gün — düzenlenemez)`
             : 'Geçmiş gün — su girişi yapılamaz'

@@ -257,7 +257,7 @@ export function SummaryTab() {
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-2">Su içilen günler (sadece girilen veriler)</h4>
                 {waterEntries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Bu dönemde henüz su kaydı yok. Takvimden sadece bugün için su girişi yapabilirsin.</p>
+                  <p className="text-sm text-muted-foreground">Bu dönemde henüz su kaydı yok. Takvimden bugün ve dün için su girişi yapabilirsin.</p>
                 ) : (
                   <ul className="space-y-1.5 max-h-48 overflow-y-auto">
                     {waterEntries.map(({ dateKey, litres }) => (

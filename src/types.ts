@@ -4,6 +4,8 @@ export interface Goal {
   id: string
   title: string
   startDate: string // YYYY-MM-DD — bu tarihten itibaren görünür
+  /** Sıralama: küçük = önce. Eksikse dizi indeksi kullanılır. */
+  order?: number
 }
 
 export interface Completions {
@@ -22,6 +24,8 @@ export interface DailyTask {
   status: DailyTaskStatus
 }
 
+export type Theme = 'light' | 'dark'
+
 export interface Store {
   goals: Goal[]
   completions: Completions
@@ -30,6 +34,7 @@ export interface Store {
   earnings?: Record<string, { amount: number; note: string }> // dateKey -> kazanç + nereden
   waterIntake?: Record<string, number> // dateKey -> litre (0, 0.5, 1, ... 4; her şişe 1L)
   dailyTasks?: DailyTask[] // günlük görevler (sadece o gün geçerli)
+  theme?: Theme // kullanıcı tema seçimi (Supabase’e de senkron edilir)
 }
 
 export interface EarningsEntry {

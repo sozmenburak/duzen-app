@@ -37,6 +37,8 @@ function migrateWaterIntake(raw: unknown): Record<string, number> {
 
 const DEFAULT_COLUMN_WIDTH = 140
 
+const THEME_KEY = 'duzen-theme'
+
 const defaultStore: Store = {
   goals: [],
   completions: {},
@@ -45,27 +47,49 @@ const defaultStore: Store = {
   earnings: {},
   waterIntake: {},
   dailyTasks: [],
+  theme: 'light',
+}
+
+function normalizeGoals(goals: unknown): Goal[] {
+  if (!Array.isArray(goals)) return []
+  return (goals as Goal[]).map((g, i) => ({
+    ...g,
+    order: typeof (g as Goal).order === 'number' ? (g as Goal).order : i,
+  })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
 function normalizeStore(parsed: unknown): Store {
   if (!parsed || typeof parsed !== 'object') return { ...defaultStore }
   const p = parsed as Record<string, unknown>
+  const theme = p.theme === 'dark' ? 'dark' : 'light'
   return {
-    goals: Array.isArray(p.goals) ? p.goals : [],
+    goals: normalizeGoals(p.goals),
     completions: p.completions && typeof p.completions === 'object' ? (p.completions as Store['completions']) : {},
     columnWidths: p.columnWidths && typeof p.columnWidths === 'object' ? (p.columnWidths as Store['columnWidths']) : {},
     comments: p.comments && typeof p.comments === 'object' ? (p.comments as Store['comments']) : {},
     earnings: migrateEarnings(p.earnings),
     waterIntake: p.waterIntake && typeof p.waterIntake === 'object' ? migrateWaterIntake(p.waterIntake) : {},
     dailyTasks: Array.isArray(p.dailyTasks) ? (p.dailyTasks as DailyTask[]) : [],
+    theme,
   }
 }
 
 function load(): Store {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { ...defaultStore }
-    return normalizeStore(JSON.parse(raw))
+    if (!raw) {
+      const stored = { ...defaultStore }
+      if (typeof localStorage !== 'undefined') {
+        stored.theme = localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+      }
+      return stored
+    }
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const stored = normalizeStore(parsed)
+    if (parsed && typeof parsed === 'object' && !('theme' in parsed) && typeof localStorage !== 'undefined') {
+      stored.theme = localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+    }
+    return stored
   } catch {
     return { ...defaultStore }
   }
@@ -97,9 +121,31 @@ export function getStore(): Store {
 }
 
 export function addGoal(goal: Goal) {
+  const order = state.goals.length
+  const withOrder = { ...goal, order }
   state = {
     ...state,
-    goals: [...state.goals, goal],
+    goals: [...state.goals, withOrder],
+  }
+  save(state)
+  emit()
+}
+
+/** Hedeflerin sırasını günceller (sürükle-bırak). Sıra hem yerelde hem giriş yapılmışsa Supabase’e kaydedilir. */
+export function reorderGoals(orderedGoalIds: string[]) {
+  const idSet = new Set(orderedGoalIds)
+  const rest = state.goals.filter((g) => !idSet.has(g.id))
+  const reordered: Goal[] = orderedGoalIds
+    .map((id, index) => {
+      const g = state.goals.find((x) => x.id === id)
+      if (!g) return null
+      return { ...g, order: index } as Goal
+    })
+    .filter((g): g is Goal => g != null)
+  const restWithOrder: Goal[] = rest.map((g, i) => ({ ...g, order: orderedGoalIds.length + i }))
+  state = {
+    ...state,
+    goals: [...reordered, ...restWithOrder].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
   }
   save(state)
   emit()
@@ -170,6 +216,17 @@ export function setColumnWidth(goalId: string, widthPx: number) {
     columnWidths: { ...state.columnWidths, [goalId]: w },
   }
   save(state)
+  emit()
+}
+
+export function getTheme(): 'light' | 'dark' {
+  return state.theme === 'dark' ? 'dark' : 'light'
+}
+
+export function setTheme(theme: 'light' | 'dark') {
+  state = { ...state, theme }
+  save(state)
+  if (typeof localStorage !== 'undefined') localStorage.setItem(THEME_KEY, theme)
   emit()
 }
 

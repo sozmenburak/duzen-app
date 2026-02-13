@@ -13,7 +13,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
-        enabled: true,
+        enabled: false, // Dev'de SW importScripts hatasını önler; PWA'yı production'da test edin
         type: 'module',
         navigateFallback: '/index.html',
       },

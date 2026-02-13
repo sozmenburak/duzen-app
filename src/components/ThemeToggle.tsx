@@ -1,15 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Moon, Sun } from 'lucide-react'
+import { useStore, setTheme } from '@/store'
 
 const THEME_KEY = 'duzen-theme'
 type Theme = 'light' | 'dark'
 
 export function ThemeToggle() {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof document === 'undefined') return 'dark'
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-  })
+  const store = useStore()
+  const theme: Theme = store.theme === 'dark' ? 'dark' : 'light'
+
+  useEffect(() => {
+    const onThemeChanged = (e: Event) => {
+      const next = (e as CustomEvent<{ theme: Theme }>).detail.theme
+      setTheme(next)
+    }
+    window.addEventListener('duzen-theme-changed', onThemeChanged)
+    return () => window.removeEventListener('duzen-theme-changed', onThemeChanged)
+  }, [])
 
   useEffect(() => {
     const root = document.documentElement
@@ -24,7 +32,7 @@ export function ThemeToggle() {
   }, [theme])
 
   const toggle = () => {
-    setThemeState((t) => (t === 'dark' ? 'light' : 'dark'))
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   return (

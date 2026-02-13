@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { pushStoreToSupabase } from '@/lib/supabaseSync'
+import { useAuth } from '@/contexts/AuthContext'
 import { exportData, resetAllData, resetDataOnly } from '@/store'
 import { RotateCcw, AlertCircle, Download, Trash2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -32,6 +34,7 @@ export interface ResetDangerModalProps {
 }
 
 export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) {
+  const { user } = useAuth()
   const [step, setStep] = useState<1 | 2>(1)
   const [mode, setMode] = useState<ResetMode>('dataOnly')
   const [tickTicks, setTickTicks] = useState(true)
@@ -62,7 +65,7 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
     downloadExport()
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     // Her ihtimale karşı silmeden önce otomatik export
     downloadExport()
     if (mode === 'all') {
@@ -75,6 +78,11 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
         waterIntake: tickWaterIntake,
         dailyTasks: tickDailyTasks,
       })
+    }
+    // Giriş yapmış kullanıcı için Supabase'deki veriyi de sıfırla (güncel store'u push et)
+    if (user?.id) {
+      const { error } = await pushStoreToSupabase(user.id)
+      if (error) console.error('[ResetDangerModal] Supabase sıfırlama hatası:', error)
     }
     handleClose(false)
     setShowSuccessModal(true)
