@@ -89,4 +89,32 @@ export async function pullSupabaseToStore(userId: string): Promise<{ error: Erro
   }
 }
 
+/** Kullanıcının kendi verisini (user_data) ve auth hesabını silmesi. Tek istek: Edge Function JWT ile sadece o kullanıcının verisini siler. */
+export async function deleteMyAccount(): Promise<{ error: string | null }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return { error: 'Oturum bulunamadı' }
+
+    const url = `${supabase.supabaseUrl}/functions/v1/delete-account`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      const msg = (body as { error?: string })?.error || res.statusText || `Hata ${res.status}`
+      return { error: msg }
+    }
+    return { error: null }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Beklenmeyen hata'
+    if (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError'))
+      return { error: 'Edge Function\'a bağlanılamadı. İnternet bağlantınızı ve CORS ayarlarını kontrol edin; fonksiyonu yeniden deploy ettiniz mi?' }
+    return { error: msg }
+  }
+}
+
 export { DEBOUNCE_MS }

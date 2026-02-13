@@ -55,4 +55,31 @@ Tüm veriler **yalnızca kullandığınız cihazın tarayıcısında** (localSto
 
 ---
 
-*Düzen — Günlük hedeflerini takip et. Su, egzersiz, alışkanlıklar.* 
+*Düzen — Günlük hedeflerini takip et. Su, egzersiz, alışkanlıklar.*
+
+---
+
+## Geliştiriciler: Edge Function (Hesap silme) deploy
+
+"Hesabımı sil" özelliği `delete-account` Edge Function’ına bağlıdır. Deploy için:
+
+1. **Supabase CLI ile giriş** (bir kez; tarayıcı açılır):
+   ```bash
+   npx supabase login
+   ```
+2. **Fonksiyonu deploy et**:
+   ```bash
+   npm run supabase:deploy:delete-account
+   ```
+
+Proje bağımlılıklarında `supabase` paketi yer alır; `npx supabase` ile de komutları çalıştırabilirsiniz. İlk deploy’da Docker uyarısı çıkabilir; Supabase CLI genelde Docker’sız da deploy eder. 403 hatası alırsanız `npx supabase login` ile giriş yapıp tekrar deneyin.
+
+---
+
+## Güvenlik (public repo)
+
+- **`.env`** ve **`.env.local`** `.gitignore`'da; commit edilmez. Supabase URL ve anon (publishable) key sadece `.env` içinde tutulmalı; asla repoya eklemeyin.
+- **Service role key** kodda yok; sadece Supabase Dashboard ve Edge Function ortamında tanımlı. Repoda aranmaz.
+- **Edge Function** tüm hassas değerleri `Deno.env.get(...)` ile alıyor; repo içinde gizli bilgi yok.
+- **Project ref** (örn. `uhawgonqyjmxwrpydddo`) `package.json` script'lerinde görünür; Supabase tasarımı gereği proje URL’inizin bir parçasıdır ve tek başına veri erişimi sağlamaz. İsterseniz script'lerde env ile kullanabilirsiniz.
+- Geçmişte **`.env` commit edildiyse**: Supabase Dashboard → Project Settings → API üzerinden anon key’i yenileyin ve git history’dan `.env` dosyasını kaldırın. 

@@ -9,6 +9,7 @@ import { AddGoalDialog } from '@/components/AddGoalDialog'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { DataExportImport } from '@/components/DataExportImport'
 import { ResetDangerModal } from '@/components/ResetDangerModal'
+import { DeleteAccountModal } from '@/components/DeleteAccountModal'
 import { CalendarGrid, MonthNav } from '@/components/CalendarGrid'
 import { TodayTab } from '@/components/TodayTab'
 import { SummaryTab } from '@/components/SummaryTab'
@@ -64,6 +65,7 @@ function App() {
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => new Date().getMonth())
   const [resetModalOpen, setResetModalOpen] = useState(false)
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
   const importFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -233,7 +235,7 @@ function App() {
       </main>
 
       {/* Tehlikeli işlem: sayfa altında, dikkat çekmeyecek şekilde */}
-      <footer className="mt-8 pt-6 border-t border-border/50">
+      <footer className="mt-8 pt-6 border-t border-border/50 flex flex-wrap items-center gap-x-3 gap-y-1">
         <button
           type="button"
           onClick={() => setResetModalOpen(true)}
@@ -241,10 +243,20 @@ function App() {
         >
           Veriyi sıfırla
         </button>
+        {user && (
+          <button
+            type="button"
+            onClick={() => setDeleteAccountModalOpen(true)}
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
+          >
+            Hesabımı sil
+          </button>
+        )}
       </footer>
       </Tabs>
 
       <ResetDangerModal open={resetModalOpen} onOpenChange={setResetModalOpen} />
+      <DeleteAccountModal open={deleteAccountModalOpen} onOpenChange={setDeleteAccountModalOpen} />
       <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
     </div>
     </>

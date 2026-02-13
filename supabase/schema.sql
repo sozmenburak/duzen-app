@@ -44,3 +44,6 @@ CREATE POLICY "user_data_update_own" ON public.user_data
   FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "user_data_delete_own" ON public.user_data
   FOR DELETE USING (auth.uid() = user_id);
+
+-- Hesap silme artık sadece Edge Function (delete-account) üzerinden yapılıyor; RPC kaldırıldı.
+-- Eski delete_my_account RPC'si varsa kaldırmak için: DROP FUNCTION IF EXISTS public.delete_my_account();
