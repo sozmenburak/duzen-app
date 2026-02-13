@@ -6,10 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Download, Upload, Database } from 'lucide-react'
+import { Download, Upload, Database, FileSpreadsheet } from 'lucide-react'
 import { pushStoreToSupabase } from '@/lib/supabaseSync'
 import { useAuth } from '@/contexts/AuthContext'
-import { exportData, importData } from '@/store'
+import { exportData, importData, getStore } from '@/store'
+import { exportStoreToExcel } from '@/lib/exportExcel'
 
 export function DataExportImport() {
   const { user } = useAuth()
@@ -24,6 +25,11 @@ export function DataExportImport() {
     a.download = `duzen-yedek-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleExportExcel = () => {
+    const store = getStore()
+    exportStoreToExcel(store)
   }
 
   const handleImportClick = () => {
@@ -69,7 +75,11 @@ export function DataExportImport() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
-            Export al
+            Export al (JSON)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleExportExcel}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Excel olarak dışa aktar
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleImportClick}>
             <Upload className="h-4 w-4 mr-2" />
