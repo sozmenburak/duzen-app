@@ -5,7 +5,8 @@ import { pushStoreToSupabase, pullSupabaseToStore, DEBOUNCE_MS } from '@/lib/sup
 
 /**
  * Giriş yapmış kullanıcı için:
- * - İlk girişte: localStorage'da veri varsa Supabase'e yükler; yoksa Supabase'den çeker.
+ * - Her sayfa açılışında / yenilemede önce Supabase'den veri çekilir (kaynak: Supabase).
+ * - Supabase'de kayıt yoksa ve bu cihazda veri varsa tek seferlik push yapılır.
  * - Store her değiştiğinde debounce sonrası Supabase'e push eder.
  */
 export function SupabaseSync() {
@@ -13,7 +14,7 @@ export function SupabaseSync() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const initialSyncDone = useRef(false)
 
-  // Giriş yapıldığında veya sayfa yüklendiğinde kullanıcı varsa: tek seferlik ilk senkron
+  // Giriş yapıldığında veya sayfa yenilendiğinde: her seferinde önce Supabase'den çek
   useEffect(() => {
     if (!user?.id) {
       initialSyncDone.current = false
@@ -22,18 +23,20 @@ export function SupabaseSync() {
     if (initialSyncDone.current) return
     initialSyncDone.current = true
 
-    const store = getStore()
-    const hasLocalData = store.goals.length > 0
+    const hadLocalData = getStore().goals.length > 0
 
-    if (hasLocalData) {
-      pushStoreToSupabase(user.id).then(({ error }) => {
-        if (error) console.error('[SupabaseSync] İlk yükleme (push) hatası:', error)
-      })
-    } else {
-      pullSupabaseToStore(user.id).then(({ error }) => {
-        if (error) console.error('[SupabaseSync] İlk yükleme (pull) hatası:', error)
-      })
-    }
+    pullSupabaseToStore(user.id).then(({ error }) => {
+      if (error) {
+        console.error('[SupabaseSync] Pull hatası:', error)
+        // Supabase'de kayıt yok (örn. yeni cihaz) ve bu cihazda veri varsa tek seferlik push
+        if (hadLocalData) {
+          pushStoreToSupabase(user.id).then(({ error: pushErr }) => {
+            if (pushErr) console.error('[SupabaseSync] İlk push hatası:', pushErr)
+          })
+        }
+        return
+      }
+    })
   }, [user?.id])
 
   // Store değişimlerinde debounce ile Supabase'e push
