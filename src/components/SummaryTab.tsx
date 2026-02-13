@@ -178,7 +178,6 @@ export function SummaryTab() {
           : 'Bu dönemde kilo girişi yok.'
         : (() => {
             const diff = (latestWeight ?? 0) - (prevLatestWeight ?? 0)
-            const prevLabel = weightPeriod === '1w' ? 'Önceki hafta' : 'Önceki ay'
             if (diff > 0.3)
               return `Son dönemde ortalama/trend yükselişte. Sağlıklı beslenme ve hareketle dengede kal.`
             if (diff < -0.3)

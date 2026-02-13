@@ -95,7 +95,9 @@ export async function deleteMyAccount(): Promise<{ error: string | null }> {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.access_token) return { error: 'Oturum bulunamadı' }
 
-    const url = `${supabase.supabaseUrl}/functions/v1/delete-account`
+    const baseUrl = import.meta.env.VITE_SUPABASE_URL
+    if (!baseUrl) return { error: 'Supabase URL yapılandırılmamış' }
+    const url = `${baseUrl}/functions/v1/delete-account`
     const res = await fetch(url, {
       method: 'POST',
       headers: {
