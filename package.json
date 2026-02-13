@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run prebuild && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prebuild": "node scripts/generate-pwa-icons.mjs",
     "supabase:link": "supabase link --project-ref uhawgonqyjmxwrpydddo",
     "supabase:deploy": "supabase functions deploy",
     "supabase:deploy:delete-account": "supabase functions deploy delete-account --project-ref uhawgonqyjmxwrpydddo --use-api --no-verify-jwt"

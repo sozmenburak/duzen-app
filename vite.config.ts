@@ -17,7 +17,7 @@ export default defineConfig({
         type: 'module',
         navigateFallback: '/index.html',
       },
-      includeAssets: ['favicon.png', 'pwa-192.png', 'pwa-512.png'],
+      includeAssets: ['favicon.png', 'maskable.png'],
       manifest: {
         id: '/',
         name: 'Düzen — Günlük Hedef Takibi',
@@ -31,9 +31,9 @@ export default defineConfig({
         orientation: 'portrait-primary',
         lang: 'tr',
         icons: [
-          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/maskable.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/maskable.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
