@@ -19,12 +19,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { LogOut, LogIn, Menu, Sun, Moon, Download, Upload } from 'lucide-react'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { LogOut, LogIn, Menu, Sun, Moon, Download, Upload, X } from 'lucide-react'
 
 function SignOutButton() {
   const { signOut } = useAuth()
@@ -60,13 +60,14 @@ function SignInButton({ onClick }: { onClick: () => void }) {
 }
 
 function App() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const store = useStore()
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => new Date().getMonth())
   const [resetModalOpen, setResetModalOpen] = useState(false)
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false)
   const [authDialogOpen, setAuthDialogOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const importFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleExport = () => {
@@ -144,7 +145,11 @@ function App() {
       <div className="min-h-screen w-full bg-background text-foreground p-4 md:p-6">
       <Tabs defaultValue="bugun" className="w-full">
       <header className="w-full mb-6 flex flex-row items-center justify-between gap-2 min-w-0">
-        {/* Masaüstünde: sekmeler sol üstte; mobilde sekmeler main içinde */}
+        {/* Mobil: Yeni hedef sola */}
+        <div className="flex shrink-0 md:hidden">
+          <AddGoalDialog />
+        </div>
+        {/* Masaüstü: sekmeler sol üstte */}
         <TabsList className="hidden md:flex mb-0 shrink-0">
           <TabsTrigger value="bugun">Bugün</TabsTrigger>
           <TabsTrigger value="calendar">Takvim</TabsTrigger>
@@ -152,7 +157,7 @@ function App() {
           <TabsTrigger value="earnings">Para</TabsTrigger>
           <TabsTrigger value="daily">Günlük</TabsTrigger>
         </TabsList>
-        {/* Masaüstü: Tema, Veri, Yeni hedef, Çıkış. Mobil: Menü (Tema/Veri) + Yeni hedef + Giriş/Çıkış — metinler açık */}
+        {/* Masaüstü: Tema, Veri, Yeni hedef, Çıkış. Mobil: sadece Menü butonu sağda */}
         <div className="flex flex-nowrap items-center justify-end gap-2 min-w-0 flex-1 md:flex-initial">
           <input
             ref={importFileInputRef}
@@ -161,44 +166,115 @@ function App() {
             className="hidden"
             onChange={handleImportFileChange}
           />
-          {/* Mobil: tek "Menü" dropdown ile Tema ve Veri (metinli) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="md:hidden shrink-0 h-9 gap-2 px-3">
-                <Menu className="h-[1.2rem] w-[1.2rem]" />
-                Menü
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-44">
-              <DropdownMenuItem onClick={() => setTheme(store.theme === 'dark' ? 'light' : 'dark')}>
-                {store.theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                Tema değiştir
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExport}>
-                <Download className="h-4 w-4" />
-                Veri yedekle
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleImportClick}>
-                <Upload className="h-4 w-4" />
-                Veri yükle
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {/* Masaüstü: ayrı Tema ve Veri butonları */}
-          <div className="hidden md:block">
+          <Button
+            variant="outline"
+            size="sm"
+            className="md:hidden shrink-0 h-9 gap-2 px-3"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Menüyü aç"
+          >
+            <Menu className="h-[1.2rem] w-[1.2rem]" />
+            Menü
+          </Button>
+          <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
-          </div>
-          <div className="hidden md:block">
             <DataExportImport />
+            <AddGoalDialog />
+            {user ? <SignOutButton /> : <SignInButton onClick={() => setAuthDialogOpen(true)} />}
           </div>
-          <AddGoalDialog />
-          {user ? <SignOutButton /> : <SignInButton onClick={() => setAuthDialogOpen(true)} />}
         </div>
       </header>
 
+      {/* Mobil: tam ekran menü */}
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent
+          showClose={false}
+          className="md:hidden fixed inset-0 z-50 h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-background p-0 shadow-none duration-300 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
+        >
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b border-border py-4 pl-8 pr-4">
+              <DialogTitle className="text-lg font-semibold">Menü</DialogTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Menüyü kapat"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <nav className="flex flex-1 flex-col gap-1 p-4">
+              <button
+                type="button"
+                className="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left text-base transition-colors hover:bg-muted active:bg-muted"
+                onClick={() => {
+                  setTheme(store.theme === 'dark' ? 'light' : 'dark')
+                  setMobileMenuOpen(false)
+                }}
+              >
+                {store.theme === 'dark' ? (
+                  <Sun className="h-5 w-5 shrink-0 text-foreground" />
+                ) : (
+                  <Moon className="h-5 w-5 shrink-0 text-foreground" />
+                )}
+                <span>Tema değiştir</span>
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left text-base transition-colors hover:bg-muted active:bg-muted"
+                onClick={() => {
+                  handleExport()
+                  setMobileMenuOpen(false)
+                }}
+              >
+                <Download className="h-5 w-5 shrink-0 text-foreground" />
+                <span>Veri yedekle</span>
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left text-base transition-colors hover:bg-muted active:bg-muted"
+                onClick={() => {
+                  handleImportClick()
+                  setMobileMenuOpen(false)
+                }}
+              >
+                <Upload className="h-5 w-5 shrink-0 text-foreground" />
+                <span>Veri yükle</span>
+              </button>
+              {user ? (
+                <button
+                  type="button"
+                  className="mt-auto flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left text-base text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted"
+                  onClick={() => {
+                    signOut()
+                    setMobileMenuOpen(false)
+                  }}
+                >
+                  <LogOut className="h-5 w-5 shrink-0" />
+                  <span>Çıkış yap</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="mt-auto flex w-full items-center gap-4 rounded-xl px-4 py-4 text-left text-base transition-colors hover:bg-muted active:bg-muted"
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    setAuthDialogOpen(true)
+                  }}
+                >
+                  <LogIn className="h-5 w-5 shrink-0 text-foreground" />
+                  <span>Giriş yap</span>
+                </button>
+              )}
+            </nav>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <main className="w-full">
-          {/* Mobilde: sekmeler header altında */}
-          <TabsList className="mb-4 md:hidden">
+          {/* Mobilde: sekmeler header altında, ortada */}
+          <TabsList className="mb-4 md:hidden w-full justify-center">
             <TabsTrigger value="bugun">Bugün</TabsTrigger>
             <TabsTrigger value="calendar">Takvim</TabsTrigger>
             <TabsTrigger value="summary">Özet</TabsTrigger>
