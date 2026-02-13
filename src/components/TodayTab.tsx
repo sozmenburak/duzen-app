@@ -1,13 +1,16 @@
-import { useStore, getCell, setCell, isGoalVisibleOnDate, getWaterIntake, setWaterIntake, getBottleState, cycleBottle, getComment, getEarnings, getEarningsNote } from '@/store'
+import { useStore, getCell, setCell, isGoalVisibleOnDate, getWaterIntake, setWaterIntake, getBottleState, cycleBottle, getComment, getEarnings, getEarningsNote, getWeight, setWeight, getWeightTrend } from '@/store'
 import { dateToKey } from '@/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { CommentButton } from '@/components/CommentButton'
 import { EarningsModal } from '@/components/EarningsModal'
 import { cn } from '@/lib/utils'
+import { Icon } from '@iconify/react'
 import { Check, X, Droplets, MessageSquare, Banknote, Target, Sparkles } from 'lucide-react'
 import type { CellStatus } from '@/types'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const todayKey = dateToKey(new Date())
 const BOTTLE_COUNT = 4
@@ -101,6 +104,86 @@ function TodayWaterSection() {
   )
 }
 
+function getWeightSuggestion(trend: 'up' | 'down' | 'stable' | null): { text: string; type: 'info' | 'success' | 'warning' } | null {
+  if (trend === 'up') return { text: 'Son dönemde kilo alımı tespit edildi. Sağlıklı beslenme ve düzenli hareketle dengede kalabilirsin.', type: 'info' }
+  if (trend === 'down') return { text: 'Kilo verimi görülüyor. Yeterli ve dengeli beslenmeye dikkat et.', type: 'warning' }
+  if (trend === 'stable') return { text: 'Kilonuz stabil seyrediyor. Bu düzeni sürdürmek iyi bir hedef.', type: 'success' }
+  return null
+}
+
+function TodayWeightSection() {
+  useStore()
+  const currentKg = getWeight(todayKey)
+  const trend = getWeightTrend(todayKey)
+  const suggestion = getWeightSuggestion(trend)
+
+  const [inputValue, setInputValue] = useState(currentKg > 0 ? (currentKg % 1 === 0 ? String(currentKg) : currentKg.toFixed(1)) : '')
+  const prevKgRef = useRef(currentKg)
+  useEffect(() => {
+    if (prevKgRef.current !== currentKg) {
+      prevKgRef.current = currentKg
+      setInputValue(currentKg > 0 ? (currentKg % 1 === 0 ? String(currentKg) : currentKg.toFixed(1)) : '')
+    }
+  }, [currentKg])
+
+  const parsed = inputValue.trim() === '' ? 0 : parseFloat(inputValue.replace(',', '.'))
+  const isValid = inputValue.trim() !== '' && Number.isFinite(parsed) && parsed >= 20 && parsed <= 300
+
+  const handleSave = () => {
+    if (!isValid) return
+    setWeight(todayKey, parsed)
+    setInputValue(parsed % 1 === 0 ? String(parsed) : parsed.toFixed(1))
+  }
+
+  return (
+    <Card className="overflow-hidden border-2 border-primary/20 bg-gradient-to-b from-primary/5 to-transparent dark:from-primary/10">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Icon icon="healthicons:overweight-outline" className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Kilo ölçümü</span>
+          {currentKg > 0 && (
+            <span className="text-sm text-muted-foreground tabular-nums">({currentKg % 1 === 0 ? currentKg : currentKg.toFixed(1)} kg)</span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-3">
+        <div className="grid gap-2">
+          <Label htmlFor="today-weight-kg" className="text-xs">Tartı değeri (kg)</Label>
+          <div className="flex gap-2">
+            <Input
+              id="today-weight-kg"
+              type="number"
+              min={20}
+              max={300}
+              step={0.1}
+              placeholder="Örn: 72,5"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="tabular-nums"
+            />
+            <Button size="sm" onClick={handleSave} disabled={!isValid}>
+              Kaydet
+            </Button>
+          </div>
+        </div>
+
+        {suggestion && (
+          <div
+            className={cn(
+              'rounded-lg border p-3 text-sm',
+              suggestion.type === 'success' && 'bg-green-500/10 border-green-500/30 text-green-800 dark:text-green-200',
+              suggestion.type === 'warning' && 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200',
+              suggestion.type === 'info' && 'bg-blue-500/10 border-blue-500/30 text-blue-800 dark:text-blue-200'
+            )}
+          >
+            {suggestion.text}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function TodayGoalCard({
   goalId,
   title,
@@ -176,10 +259,13 @@ export function TodayTab() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] gap-6 items-start">
-      {/* Sol: Su, Para, Yorum */}
+      {/* Sol: Su, Kilo, Para, Yorum */}
       <div className="space-y-4 order-2 lg:order-1">
         <div>
           <TodayWaterSection />
+        </div>
+        <div>
+          <TodayWeightSection />
         </div>
         <Card>
           <CardHeader className="pb-2">

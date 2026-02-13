@@ -30,6 +30,7 @@ export async function pushStoreToSupabase(userId: string): Promise<{ error: Erro
 
   try {
     const theme = store.theme === 'dark' ? 'dark' : getSyncedTheme()
+    // weight_measurements uzak tabloda yoksa 400 hatası veriyor; sütun eklenene kadar göndermiyoruz
     const row = {
       user_id: userId,
       goals: store.goals,
@@ -67,6 +68,8 @@ export async function pullSupabaseToStore(userId: string): Promise<{ error: Erro
     const theme = data.theme === 'dark' ? 'dark' : 'light'
     applyTheme(theme)
 
+    // weight_measurements uzak tabloda yok; yerel store'daki değeri koruyoruz
+    const existingStore = getStore()
     const storeData: Store = {
       goals: Array.isArray(data.goals) ? data.goals : [],
       completions: data.completions && typeof data.completions === 'object' ? data.completions : {},
@@ -74,6 +77,7 @@ export async function pullSupabaseToStore(userId: string): Promise<{ error: Erro
       comments: data.comments && typeof data.comments === 'object' ? data.comments : {},
       earnings: data.earnings && typeof data.earnings === 'object' ? data.earnings : {},
       waterIntake: data.water_intake && typeof data.water_intake === 'object' ? data.water_intake : {},
+      weightMeasurements: existingStore.weightMeasurements ?? {},
       dailyTasks: Array.isArray(data.daily_tasks) ? data.daily_tasks : [],
       theme,
     }

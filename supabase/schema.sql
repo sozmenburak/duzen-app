@@ -19,12 +19,14 @@ CREATE TABLE IF NOT EXISTS public.user_data (
   comments JSONB NOT NULL DEFAULT '{}',
   earnings JSONB NOT NULL DEFAULT '{}',
   water_intake JSONB NOT NULL DEFAULT '{}',
+  weight_measurements JSONB NOT NULL DEFAULT '{}',
   daily_tasks JSONB NOT NULL DEFAULT '[]',
   theme TEXT NOT NULL DEFAULT 'light'
 );
 
--- Tablo zaten varsa sadece tema sütununu eklemek için (yukarıdaki CREATE'ı atlayıp bunu çalıştırın):
+-- Tablo zaten varsa sadece eksik sütunları eklemek için:
 ALTER TABLE public.user_data ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'light';
+ALTER TABLE public.user_data ADD COLUMN IF NOT EXISTS weight_measurements JSONB NOT NULL DEFAULT '{}';
 
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 

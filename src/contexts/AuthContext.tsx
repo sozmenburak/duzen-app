@@ -8,6 +8,7 @@ type AuthState = {
   loading: boolean
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithGoogle: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
 }
 
@@ -45,6 +46,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error ?? null }
   }, [])
 
+  const signInWithGoogle = React.useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+      },
+    })
+    return { error: error ?? null }
+  }, [])
+
   const signOut = React.useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
@@ -55,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   }
 

@@ -35,6 +35,25 @@ function migrateWaterIntake(raw: unknown): Record<string, number> {
   return out
 }
 
+const MIN_WEIGHT_KG = 20
+const MAX_WEIGHT_KG = 300
+
+function normalizeWeightKg(value: number): number {
+  if (!Number.isFinite(value) || value < 0) return 0
+  const rounded = Math.round(value * 10) / 10
+  return Math.min(MAX_WEIGHT_KG, Math.max(MIN_WEIGHT_KG, rounded))
+}
+
+function migrateWeightMeasurements(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, number> = {}
+  for (const [k, v] of Object.entries(raw)) {
+    const num = typeof v === 'number' ? v : Number(v)
+    if (Number.isFinite(num) && num >= MIN_WEIGHT_KG && num <= MAX_WEIGHT_KG) out[k] = normalizeWeightKg(num)
+  }
+  return out
+}
+
 const DEFAULT_COLUMN_WIDTH = 140
 
 const THEME_KEY = 'duzen-theme'
@@ -46,6 +65,7 @@ const defaultStore: Store = {
   comments: {},
   earnings: {},
   waterIntake: {},
+  weightMeasurements: {},
   dailyTasks: [],
   theme: 'light',
 }
@@ -69,6 +89,7 @@ function normalizeStore(parsed: unknown): Store {
     comments: p.comments && typeof p.comments === 'object' ? (p.comments as Store['comments']) : {},
     earnings: migrateEarnings(p.earnings),
     waterIntake: p.waterIntake && typeof p.waterIntake === 'object' ? migrateWaterIntake(p.waterIntake) : {},
+    weightMeasurements: p.weightMeasurements && typeof p.weightMeasurements === 'object' ? migrateWeightMeasurements(p.weightMeasurements) : {},
     dailyTasks: Array.isArray(p.dailyTasks) ? (p.dailyTasks as DailyTask[]) : [],
     theme,
   }
@@ -333,6 +354,69 @@ export function getWaterIntakeEntriesInRange(startDateKey?: string, endDateKey?:
   return list
 }
 
+export function getWeight(dateKey: string): number {
+  return state.weightMeasurements?.[dateKey] ?? 0
+}
+
+export function setWeight(dateKey: string, kg: number) {
+  const value = kg > 0 ? normalizeWeightKg(kg) : 0
+  if (value === 0) {
+    const { [dateKey]: _, ...rest } = state.weightMeasurements ?? {}
+    state = { ...state, weightMeasurements: rest }
+  } else {
+    state = {
+      ...state,
+      weightMeasurements: { ...state.weightMeasurements, [dateKey]: value },
+    }
+  }
+  save(state)
+  emit()
+}
+
+/** Tarih aralığında kilo kayıtları (tarih sıralı, en yeni önce). */
+export function getWeightEntriesInRange(startDateKey?: string, endDateKey?: string): { dateKey: string; kg: number }[] {
+  const entries = state.weightMeasurements ?? {}
+  let list = Object.entries(entries)
+    .filter(([, kg]) => kg > 0)
+    .map(([dateKey, kg]) => ({ dateKey, kg }))
+  if (startDateKey) list = list.filter(({ dateKey }) => dateKey >= startDateKey)
+  if (endDateKey) list = list.filter(({ dateKey }) => dateKey <= endDateKey)
+  list.sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+  return list
+}
+
+/** En son kilo girişi yapılan tarih (dateKey). Yoksa null. */
+export function getLastWeightEntryDateKey(): string | null {
+  const entries = state.weightMeasurements ?? {}
+  const keys = Object.keys(entries).filter((k) => (entries[k] ?? 0) > 0)
+  if (keys.length === 0) return null
+  return keys.sort((a, b) => b.localeCompare(a))[0] ?? null
+}
+
+/** Bugüne göre son kilo girişinden bu yana kaç gün geçtiği. Hiç giriş yoksa null değil, büyük bir sayı (örn. 999). */
+export function getDaysSinceLastWeightEntry(todayDateKey: string): number {
+  const last = getLastWeightEntryDateKey()
+  if (!last) return 999
+  const a = new Date(todayDateKey + 'T12:00:00').getTime()
+  const b = new Date(last + 'T12:00:00').getTime()
+  return Math.floor((a - b) / (24 * 60 * 60 * 1000))
+}
+
+/** Son iki dönem (son 7 gün vs önceki 7 gün) ortalamalarına göre trend: 'up' | 'down' | 'stable' | null (yetersiz veri). */
+export function getWeightTrend(todayDateKey: string): 'up' | 'down' | 'stable' | null {
+  const entries = getWeightEntriesInRange(undefined, todayDateKey)
+  if (entries.length < 2) return null
+  const recent = entries.slice(0, 7)
+  const previous = entries.slice(7, 14)
+  if (previous.length === 0) return null
+  const avgRecent = recent.reduce((s, e) => s + e.kg, 0) / recent.length
+  const avgPrevious = previous.reduce((s, e) => s + e.kg, 0) / previous.length
+  const diff = avgRecent - avgPrevious
+  if (diff > 0.3) return 'up'
+  if (diff < -0.3) return 'down'
+  return 'stable'
+}
+
 /** Belirli bir güne ait günlük görevleri döndürür (başlık sıralı). */
 export function getDailyTasksForDate(dateKey: string): DailyTask[] {
   const list = (state.dailyTasks ?? []).filter((t) => t.dateKey === dateKey)
@@ -421,10 +505,11 @@ export function importData(json: string): boolean {
 }
 
 export type ResetDataOptions = {
-  ticks?: boolean   // completions (yapıldı/yapılmadı)
+  ticks?: boolean
   comments?: boolean
   earnings?: boolean
   waterIntake?: boolean
+  weightMeasurements?: boolean
   dailyTasks?: boolean
 }
 
@@ -435,15 +520,16 @@ export function resetAllData() {
   emit()
 }
 
-/** Sadece veriyi siler; hedefler ve sütun genişlikleri kalır. Seçeneklere göre tikler, yorumlar, para, su, günlük görevler silinir. */
+/** Sadece veriyi siler; hedefler ve sütun genişlikleri kalır. Seçeneklere göre tikler, yorumlar, para, su, kilo, günlük görevler silinir. */
 export function resetDataOnly(options: ResetDataOptions) {
-  const { ticks = true, comments = true, earnings = true, waterIntake: wipeWater = true, dailyTasks: resetDaily = true } = options
+  const { ticks = true, comments = true, earnings = true, waterIntake: wipeWater = true, weightMeasurements: wipeWeight = true, dailyTasks: resetDaily = true } = options
   state = {
     ...state,
     completions: ticks ? {} : state.completions,
     comments: comments ? {} : state.comments,
     earnings: earnings ? {} : state.earnings,
     waterIntake: wipeWater ? {} : state.waterIntake,
+    weightMeasurements: wipeWeight ? {} : state.weightMeasurements,
     dailyTasks: resetDaily ? [] : state.dailyTasks,
   }
   save(state)

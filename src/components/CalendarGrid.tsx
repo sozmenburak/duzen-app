@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { CommentButton } from '@/components/CommentButton'
 import { EarningsButton } from '@/components/EarningsButton'
 import { WaterBottlesButton } from '@/components/WaterBottlesButton'
+import { WeightButton } from '@/components/WeightButton'
+import { Icon } from '@iconify/react'
 import { Check, X, Trash2, GripVertical, MessageSquare, Droplets } from 'lucide-react'
 import {
   DropdownMenu,
@@ -30,10 +32,12 @@ function Cell({
   dateKey,
   goalId,
   visible,
+  isTodayRow,
 }: {
   dateKey: string
   goalId: string
   visible: boolean
+  isTodayRow?: boolean
 }) {
   const status = getCell(dateKey, goalId)
 
@@ -45,9 +49,32 @@ function Cell({
 
   if (!visible) {
     return (
-      <div className="h-10 w-10 rounded border border-border/50 bg-muted/30 flex items-center justify-center text-muted-foreground/50 shrink-0 mx-auto" />
+      <div
+        className={cn(
+          'h-10 w-10 rounded border flex items-center justify-center shrink-0 mx-auto',
+          isTodayRow
+            ? 'border-white/40 bg-white/10 text-white/50'
+            : 'border-border/50 bg-muted/30 text-muted-foreground/50'
+        )}
+      />
     )
   }
+
+  const doneStyles = status === 'done' && (
+    isTodayRow
+      ? 'border-white/60 bg-white/20 text-white'
+      : 'border-green-600 bg-green-600/20 text-green-400'
+  )
+  const skipStyles = status === 'skip' && (
+    isTodayRow
+      ? 'border-white/60 bg-white/15 text-white'
+      : 'border-destructive/60 bg-destructive/10 text-destructive'
+  )
+  const emptyStyles = !status && (
+    isTodayRow
+      ? 'border-white/50 bg-white/10 hover:bg-white/20 text-white'
+      : 'border-border bg-card hover:bg-accent'
+  )
 
   return (
     <button
@@ -55,9 +82,9 @@ function Cell({
       onClick={cycle}
       className={cn(
         'h-10 w-10 rounded border flex items-center justify-center transition-colors shrink-0 mx-auto',
-        status === 'done' && 'border-green-600 bg-green-600/20 text-green-400',
-        status === 'skip' && 'border-destructive/60 bg-destructive/10 text-destructive',
-        !status && 'border-border bg-card hover:bg-accent'
+        doneStyles,
+        skipStyles,
+        emptyStyles
       )}
       title={status === 'done' ? 'Yapıldı' : status === 'skip' ? 'Yapılmadı' : 'Tıkla: yapıldı → yapılmadı → boş'}
     >
@@ -223,8 +250,11 @@ export function CalendarGrid({
           <div className="w-20 shrink-0 flex items-center justify-center py-1 border-r border-border text-muted-foreground text-lg font-semibold" title="Para kazanma">
             ₺
           </div>
-          <div className="w-28 shrink-0 flex items-center justify-center py-1 border-border text-muted-foreground" title="Su tüketimi (her şişe 1 L)">
+          <div className="w-28 shrink-0 flex items-center justify-center py-1 border-r border-border text-muted-foreground" title="Su tüketimi (her şişe 1 L)">
             <Droplets className="h-4 w-4" />
+          </div>
+          <div className="w-20 shrink-0 flex items-center justify-center py-1 border-border text-muted-foreground" title="Kilo ölçümü (kg)">
+            <Icon icon="healthicons:overweight-outline" className="h-4 w-4" />
           </div>
         </div>
         {/* Her gün bir satır */}
@@ -243,17 +273,16 @@ export function CalendarGrid({
               key={dateKey}
               className={cn(
                 'flex border-b border-border last:border-b-0 items-center',
-                isToday &&
-                  'bg-primary/15 dark:bg-primary/25 border-l-2 border-l-primary -ml-0.5 pl-0.5'
+                isToday && 'bg-primary border-l-2 border-l-primary -ml-0.5 pl-0.5 text-white'
               )}
             >
-              <div className="w-28 shrink-0 py-1 pl-2 flex items-center gap-1 text-sm border-r border-border">
-                <span className="text-muted-foreground text-xs">{weekDayLabel}</span>
-                <span className={cn('font-medium tabular-nums', isToday && 'text-primary font-semibold')}>
+              <div className={cn('w-28 shrink-0 py-1 pl-2 flex items-center gap-1 text-sm border-r', isToday ? 'border-white/40' : 'border-border')}>
+                <span className={isToday ? 'text-white/80 text-xs' : 'text-muted-foreground text-xs'}>{weekDayLabel}</span>
+                <span className={cn('font-medium tabular-nums', isToday && 'text-white font-semibold')}>
                   {dayLabel}
                 </span>
                 {isToday && (
-                  <span className="text-[10px] font-medium text-primary bg-primary/20 dark:bg-primary/30 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-medium text-white bg-white/20 px-1.5 py-0.5 rounded">
                     Bugün
                   </span>
                 )}
@@ -261,24 +290,28 @@ export function CalendarGrid({
               {goals.map((goal) => (
                 <div
                   key={goal.id}
-                  className="shrink-0 flex justify-center py-1 border-r border-border"
+                  className={cn('shrink-0 flex justify-center py-1 border-r', isToday ? 'border-white/40' : 'border-border')}
                   style={{ width: `${getColumnWidth(goal.id)}px` }}
                 >
                   <Cell
                     dateKey={dateKey}
                     goalId={goal.id}
                     visible={isGoalVisibleOnDate(goal, dateKey)}
+                    isTodayRow={isToday}
                   />
                 </div>
               ))}
-              <div className="w-14 shrink-0 flex justify-center items-center py-1 border-r border-border">
-                <CommentButton dateKey={dateKey} />
+              <div className={cn('w-14 shrink-0 flex justify-center items-center py-1 border-r', isToday ? 'border-white/40' : 'border-border')}>
+                <CommentButton dateKey={dateKey} isTodayRow={isToday} />
               </div>
-              <div className="w-20 shrink-0 flex justify-center items-center py-1 border-r border-border">
-                <EarningsButton dateKey={dateKey} />
+              <div className={cn('w-20 shrink-0 flex justify-center items-center py-1 border-r', isToday ? 'border-white/40' : 'border-border')}>
+                <EarningsButton dateKey={dateKey} isTodayRow={isToday} />
               </div>
-              <div className="w-28 shrink-0 flex justify-center items-center py-1 border-border">
-                <WaterBottlesButton dateKey={dateKey} />
+              <div className={cn('w-28 shrink-0 flex justify-center items-center py-1 border-r', isToday ? 'border-white/40' : 'border-border')}>
+                <WaterBottlesButton dateKey={dateKey} isTodayRow={isToday} />
+              </div>
+              <div className={cn('w-20 shrink-0 flex justify-center items-center py-1', isToday ? 'border-white/40' : 'border-border')}>
+                <WeightButton dateKey={dateKey} isTodayRow={isToday} />
               </div>
             </div>
           )

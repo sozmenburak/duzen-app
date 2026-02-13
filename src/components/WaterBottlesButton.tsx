@@ -54,13 +54,16 @@ function cn(...args: (string | boolean | undefined)[]) {
 
 interface WaterBottlesButtonProps {
   dateKey: string
+  isTodayRow?: boolean
 }
 
-export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
+export function WaterBottlesButton({ dateKey, isTodayRow }: WaterBottlesButtonProps) {
   useStore()
   const total = getWaterIntake(dateKey)
   const hasWater = total > 0
   const canEdit = isToday(dateKey) || isYesterday(dateKey)
+  const isYesterdayRow = isYesterday(dateKey)
+  const noDistinctBackground = isTodayRow || isYesterdayRow
 
   const handleBottleClick = (index: number) => {
     if (!canEdit) return
@@ -71,11 +74,10 @@ export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
   return (
     <div
       className={cn(
-        'flex items-center justify-center gap-0.5 h-10 px-1 rounded border shrink-0 transition-colors',
-        hasWater
-          ? 'border-primary/50 bg-primary/10'
-          : 'border-border bg-card',
-        canEdit && !hasWater && 'hover:bg-accent',
+        'flex items-center justify-center gap-0.5 h-10 px-1 rounded shrink-0 transition-colors',
+        isTodayRow && 'text-white',
+        !noDistinctBackground && (hasWater ? 'bg-primary/10' : 'bg-card'),
+        canEdit && !hasWater && !isTodayRow && 'hover:bg-accent',
         !canEdit && 'opacity-90 cursor-default'
       )}
       title={
@@ -98,8 +100,10 @@ export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
             onClick={() => handleBottleClick(i)}
             className={cn(
               'p-0.5 rounded transition-colors touch-manipulation',
-              state === 0 && 'text-muted-foreground hover:text-foreground',
-              (state === 0.5 || state === 1) && 'text-primary'
+              isTodayRow
+                ? 'text-white hover:text-white/90'
+                : state === 0 && 'text-muted-foreground hover:text-foreground',
+              !isTodayRow && (state === 0.5 || state === 1) && 'text-primary'
             )}
             title={`Şişe ${i + 1}: ${state === 0 ? 'Boş' : state === 0.5 ? 'Yarım' : 'Dolu'} — tıkla`}
             aria-label={`Şişe ${i + 1}, ${state === 0 ? 'boş' : state === 0.5 ? 'yarım dolu' : 'dolu'}`}
@@ -114,8 +118,8 @@ export function WaterBottlesButton({ dateKey }: WaterBottlesButtonProps) {
             key={i}
             className={cn(
               'inline-flex p-0.5 rounded',
-              state === 0 && 'text-muted-foreground',
-              (state === 0.5 || state === 1) && 'text-primary'
+              isTodayRow ? 'text-white' : state === 0 && 'text-muted-foreground',
+              !isTodayRow && (state === 0.5 || state === 1) && 'text-primary'
             )}
             aria-hidden
           >

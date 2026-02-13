@@ -41,6 +41,7 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
   const [tickComments, setTickComments] = useState(true)
   const [tickEarnings, setTickEarnings] = useState(true)
   const [tickWaterIntake, setTickWaterIntake] = useState(true)
+  const [tickWeightMeasurements, setTickWeightMeasurements] = useState(true)
   const [tickDailyTasks, setTickDailyTasks] = useState(true)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
@@ -52,6 +53,7 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
       setTickComments(true)
       setTickEarnings(true)
       setTickWaterIntake(true)
+      setTickWeightMeasurements(true)
       setTickDailyTasks(true)
     }
     onOpenChange(isOpen)
@@ -76,6 +78,7 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
         comments: tickComments,
         earnings: tickEarnings,
         waterIntake: tickWaterIntake,
+        weightMeasurements: tickWeightMeasurements,
         dailyTasks: tickDailyTasks,
       })
     }
@@ -184,6 +187,14 @@ export function ResetDangerModal({ open, onOpenChange }: ResetDangerModalProps) 
                       onChange={(e) => setTickWaterIntake(e.target.checked)}
                     />
                     <span className="text-sm">Su tüketimi verisi</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={tickWeightMeasurements}
+                      onChange={(e) => setTickWeightMeasurements(e.target.checked)}
+                    />
+                    <span className="text-sm">Kilo ölçüm verisi</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input

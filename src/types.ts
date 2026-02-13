@@ -33,6 +33,7 @@ export interface Store {
   comments?: Record<string, string> // dateKey -> günlük yorum
   earnings?: Record<string, { amount: number; note: string }> // dateKey -> kazanç + nereden
   waterIntake?: Record<string, number> // dateKey -> litre (0, 0.5, 1, ... 4; her şişe 1L)
+  weightMeasurements?: Record<string, number> // dateKey -> kg (tartı değeri)
   dailyTasks?: DailyTask[] // günlük görevler (sadece o gün geçerli)
   theme?: Theme // kullanıcı tema seçimi (Supabase’e de senkron edilir)
 }

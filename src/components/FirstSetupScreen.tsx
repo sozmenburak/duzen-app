@@ -121,17 +121,6 @@ export function FirstSetupScreen({ onOpenAuthDialog }: { onOpenAuthDialog?: () =
           <LogOut className="h-4 w-4" />
           Çıkış
         </Button>
-      ) : onOpenAuthDialog ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-4 right-4 text-muted-foreground"
-          onClick={onOpenAuthDialog}
-          title="Giriş yap — verilerini senkronize et"
-        >
-          <LogIn className="h-4 w-4" />
-          Giriş yap
-        </Button>
       ) : null}
       <input
         ref={fileInputRef}
@@ -150,7 +139,12 @@ export function FirstSetupScreen({ onOpenAuthDialog }: { onOpenAuthDialog?: () =
             </p>
           </div>
 
-          <div className="grid gap-4 w-full max-w-md sm:grid-cols-2">
+          <div
+            className={cn(
+              'grid gap-4 w-full mx-auto sm:grid-cols-2',
+              user ? 'max-w-md' : 'max-w-2xl lg:grid-cols-3'
+            )}
+          >
             <Card
               className="cursor-pointer transition-all hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring"
               tabIndex={0}
@@ -184,7 +178,31 @@ export function FirstSetupScreen({ onOpenAuthDialog }: { onOpenAuthDialog?: () =
                 </CardDescription>
               </CardHeader>
             </Card>
+
+            {!user && onOpenAuthDialog ? (
+              <Card
+                className="cursor-pointer transition-all hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring"
+                tabIndex={0}
+                onClick={onOpenAuthDialog}
+                onKeyDown={(e) => e.key === 'Enter' && onOpenAuthDialog()}
+              >
+                <CardHeader>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
+                    <LogIn className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">Giriş yap</CardTitle>
+                  <CardDescription>
+                    Verilerini senkronize et; tüm cihazlarından aynı hedeflere eriş.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ) : null}
           </div>
+          {!user && (
+            <p className="mt-6 text-center text-sm text-muted-foreground/90 max-w-md">
+              Verilerin kaybolmasın; giriş yaparak telefondan, bilgisayardan ve tüm cihazlarından aynı veriyi görüntüle ve yönet.
+            </p>
+          )}
         </>
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { getStore, useStore, getWaterIntakeEntriesInRange } from '@/store'
+import { getStore, useStore, getWaterIntakeEntriesInRange, getWeightEntriesInRange, getWeightTrend } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ContributionHeatmap } from '@/components/ContributionHeatmap'
 import {
@@ -9,6 +9,7 @@ import {
   getAutoInterpretation,
   type PeriodStats,
 } from '@/lib/summary'
+import { Icon } from '@iconify/react'
 import { Droplets, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 type PeriodKey = '1w' | '1m' | '3m' | '6m' | '1y'
@@ -152,6 +153,39 @@ export function SummaryTab() {
             return `Bu ${periodLabel} ${formatLitres(waterTotalLitres)} — ${prevLabel} ile aynı.`
           })()
 
+  // Kilo özeti (son 1 hafta / 1 ay)
+  const [weightPeriod, setWeightPeriod] = useState<WaterPeriodKey>('1m')
+  const weightRange = getPeriodRange(weightPeriod)
+  const weightPrevRange = getPreviousPeriodRange(weightPeriod)
+  const weightEntries = useMemo(
+    () => getWeightEntriesInRange(weightRange.start, weightRange.end),
+    [weightRange.start, weightRange.end, store]
+  )
+  const weightPrevEntries = useMemo(
+    () => getWeightEntriesInRange(weightPrevRange.start, weightPrevRange.end),
+    [weightPrevRange.start, weightPrevRange.end, store]
+  )
+  const weightPeriodLabel = weightPeriod === '1w' ? 'hafta' : 'ay'
+  const latestWeight = weightEntries[0]?.kg
+  const prevLatestWeight = weightPrevEntries[0]?.kg
+  const weightTrend = useMemo(() => getWeightTrend(weightRange.end), [weightRange.end, store])
+  const weightComparisonText =
+    weightEntries.length === 0 && weightPrevEntries.length === 0
+      ? 'Henüz kilo kaydı yok.'
+      : weightPrevEntries.length === 0
+        ? weightEntries.length > 0
+          ? `Bu ${weightPeriodLabel} ${weightEntries.length} giriş. Son ölçüm: ${latestWeight} kg.`
+          : 'Bu dönemde kilo girişi yok.'
+        : (() => {
+            const diff = (latestWeight ?? 0) - (prevLatestWeight ?? 0)
+            const prevLabel = weightPeriod === '1w' ? 'Önceki hafta' : 'Önceki ay'
+            if (diff > 0.3)
+              return `Son dönemde ortalama/trend yükselişte. Sağlıklı beslenme ve hareketle dengede kal.`
+            if (diff < -0.3)
+              return `Kilo verimi görülüyor. Yeterli ve dengeli beslenmeye dikkat et.`
+            return `Kilonuz bu ${weightPeriodLabel} stabil seyrediyor — güzel.`
+          })()
+
   if (goals.length === 0) {
     return (
       <Card>
@@ -264,6 +298,79 @@ export function SummaryTab() {
                       <li key={dateKey} className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">{formatDateShort(dateKey)}</span>
                         <span className="font-medium tabular-nums text-primary">{formatLitres(litres)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Icon icon="healthicons:overweight-outline" className="h-4 w-4" />
+                  Kilo ölçümü
+                </CardTitle>
+                <select
+                  value={weightPeriod}
+                  onChange={(e) => setWeightPeriod(e.target.value as WaterPeriodKey)}
+                  className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {WATER_PERIOD_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              <div className="flex flex-wrap gap-4 text-sm">
+                {weightEntries.length > 0 && (
+                  <p className="text-muted-foreground">
+                    Son ölçüm: <strong className="text-foreground">{latestWeight} kg</strong>
+                    {weightEntries.length > 1 && (
+                      <> — Bu dönemde <strong className="text-foreground">{weightEntries.length}</strong> giriş</>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-sm text-foreground/90 flex items-center gap-2">
+                {weightComparisonText.includes('yükselişte') && <TrendingUp className="h-4 w-4 text-amber-500 shrink-0" />}
+                {weightComparisonText.includes('verimi') && <TrendingDown className="h-4 w-4 text-blue-500 shrink-0" />}
+                {weightComparisonText.includes('stabil') && <Minus className="h-4 w-4 text-green-500 shrink-0" />}
+                {weightComparisonText}
+              </p>
+
+              {weightTrend === 'up' && (
+                <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-500/10 rounded-lg p-2">
+                  Öneri: Kilo alımı tespit edildi. Sağlıklı beslenme ve düzenli hareketle dengede kalabilirsin.
+                </p>
+              )}
+              {weightTrend === 'down' && (
+                <p className="text-sm text-blue-700 dark:text-blue-300 bg-blue-500/10 rounded-lg p-2">
+                  Öneri: Kilo verimi görülüyor. Yeterli ve dengeli beslenmeye dikkat et.
+                </p>
+              )}
+              {weightTrend === 'stable' && weightEntries.length >= 2 && (
+                <p className="text-sm text-green-700 dark:text-green-300 bg-green-500/10 rounded-lg p-2">
+                  Kilonuz stabil seyrediyor. Bu düzeni sürdürmek iyi bir hedef.
+                </p>
+              )}
+
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">Kilo girişleri (tarih sıralı, en yeni üstte)</h4>
+                {weightEntries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Bu dönemde kilo kaydı yok. Bugün veya takvimden tartı değeri girebilirsin.</p>
+                ) : (
+                  <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {weightEntries.map(({ dateKey, kg }) => (
+                      <li key={dateKey} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">{formatDateShort(dateKey)}</span>
+                        <span className="font-medium tabular-nums text-primary">{kg % 1 === 0 ? kg : kg.toFixed(1)} kg</span>
                       </li>
                     ))}
                   </ul>
